@@ -6,13 +6,15 @@ import { CodeBlock } from "./CodeBlock";
 interface QuizProps {
   quiz: QuizType;
   isAiGenerated: boolean;
+  onQuizComplete: () => void;
 }
 
-export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
+export const Quiz = ({ quiz, isAiGenerated, onQuizComplete }: QuizProps) => {
   const [droppedItem, setDroppedItem] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     resetQuiz();
@@ -37,6 +39,10 @@ export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
     }
     setIsCorrect(answerCorrect);
     setShowFeedback(true);
+    if (answerCorrect) {
+      setIsCompleted(true);
+      onQuizComplete();
+    }
   };
 
   const resetQuiz = () => {
@@ -44,6 +50,7 @@ export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
     setSelectedOption(null);
     setIsCorrect(null);
     setShowFeedback(false);
+    setIsCompleted(false);
   };
 
   const dropZoneClass = `mt-2 h-12 w-28 flex items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
@@ -107,6 +114,7 @@ export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
                   ? "bg-teal-600"
                   : "bg-gray-700 hover:bg-gray-600"
               }`}
+              disabled={isCompleted}
             >
               {option}
             </button>
@@ -120,7 +128,9 @@ export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
         <button
           onClick={checkAnswer}
           disabled={
-            quiz.type === "drag-and-drop" ? !droppedItem : !selectedOption
+            quiz.type === "drag-and-drop"
+              ? !droppedItem
+              : !selectedOption || isCompleted
           }
           className="mt-4 px-6 py-2 bg-yellow-500 text-gray-900 font-bold rounded-lg hover:bg-yellow-600 disabled:bg-gray-600 transition"
         >
@@ -150,12 +160,14 @@ export const Quiz = ({ quiz, isAiGenerated }: QuizProps) => {
               </p>
             </div>
           )}
-          <button
-            onClick={resetQuiz}
-            className="mt-4 px-6 py-2 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition"
-          >
-            Try Again
-          </button>
+          {!isCorrect && (
+            <button
+              onClick={resetQuiz}
+              className="mt-4 px-6 py-2 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition"
+            >
+              Try Again
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -14,6 +14,10 @@ interface LearningModuleProps {
   addAiQuiz: (topic: string, quiz: Quiz) => void;
   aiQuizzes: Quiz[];
   courseData: CourseData;
+  onQuizComplete: () => void;
+  isTopicCompleted: boolean;
+  handleNextTopic: () => void;
+  isLastTopic: boolean;
 }
 
 export const LearningModule = ({
@@ -23,6 +27,10 @@ export const LearningModule = ({
   progress,
   addAiQuiz,
   aiQuizzes,
+  onQuizComplete,
+  isTopicCompleted,
+  handleNextTopic,
+  isLastTopic,
 }: LearningModuleProps) => {
   const [activeChunk, setActiveChunk] = useState(0);
 
@@ -92,7 +100,23 @@ export const LearningModule = ({
       </div>
 
       {progress === 100 && (
-        <QuizSection originalQuiz={topicData.quiz} aiQuizzes={aiQuizzes} />
+        <QuizSection
+          originalQuiz={topicData.quiz}
+          aiQuizzes={aiQuizzes}
+          onQuizComplete={onQuizComplete}
+        />
+      )}
+
+      {isTopicCompleted && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={handleNextTopic}
+            disabled={isLastTopic}
+            className="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-transform transform hover:scale-105"
+          >
+            {isLastTopic ? "Course Completed!" : "Next Topic →"}
+          </button>
+        </div>
       )}
     </div>
   );

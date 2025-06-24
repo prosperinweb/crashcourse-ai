@@ -23,6 +23,7 @@ const App = () => {
     useState<AiGeneratedQuizzes>({});
   const [isGeneratingCourse, setIsGeneratingCourse] = useState(false);
   const [courseTitle, setCourseTitle] = useState("Advanced TypeScript");
+  const [completedQuizzes, setCompletedQuizzes] = useState<string[]>([]);
 
   const resetCourse = (newCourseData: CourseData, newTitle: string) => {
     setCourseData(newCourseData);
@@ -36,6 +37,7 @@ const App = () => {
     setProgress(newProgress);
     setBadges([]);
     setAiGeneratedQuizzes({});
+    setCompletedQuizzes([]);
   };
 
   const currentTopicData = courseData[activeTopic];
@@ -61,6 +63,19 @@ const App = () => {
     const newIndex = activeTopicIndex + direction;
     if (newIndex >= 0 && newIndex < topicKeys.length) {
       setActiveTopic(topicKeys[newIndex]);
+    }
+  };
+
+  const handleNextTopic = () => {
+    const newIndex = activeTopicIndex + 1;
+    if (newIndex < topicKeys.length) {
+      setActiveTopic(topicKeys[newIndex]);
+    }
+  };
+
+  const handleQuizComplete = (topic: string) => {
+    if (!completedQuizzes.includes(topic)) {
+      setCompletedQuizzes([...completedQuizzes, topic]);
     }
   };
 
@@ -102,6 +117,10 @@ const App = () => {
                 addAiQuiz={addAiQuiz}
                 aiQuizzes={aiGeneratedQuizzes[activeTopic] || []}
                 courseData={courseData}
+                onQuizComplete={() => handleQuizComplete(activeTopic)}
+                isTopicCompleted={completedQuizzes.includes(activeTopic)}
+                handleNextTopic={handleNextTopic}
+                isLastTopic={activeTopicIndex === topicKeys.length - 1}
               />
             </>
           ) : (

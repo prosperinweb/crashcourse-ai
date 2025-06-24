@@ -24,6 +24,10 @@ interface CourseState {
   showInitialCourseNote: boolean;
   isGeneratingCourse: boolean;
 
+  // Quiz modal state
+  showQuizModal: boolean;
+  quizModalTopic: string | null;
+
   // Actions
   resetCourse: (newCourseData: CourseData, newTitle: string) => void;
   updateProgress: (topic: string, chunkIndex: number) => void;
@@ -36,6 +40,7 @@ interface CourseState {
   setShowConfetti: (show: boolean) => void;
   setShowInitialCourseNote: (show: boolean) => void;
   setIsGeneratingCourse: (generating: boolean) => void;
+  setShowQuizModal: (show: boolean, topic?: string) => void;
 
   // Computed getters
   getCurrentTopicData: () => TopicData | undefined;
@@ -64,6 +69,8 @@ export const useCourseStore = create<CourseState>()(
       isInitialCourse: true,
       showInitialCourseNote: true,
       isGeneratingCourse: false,
+      showQuizModal: false,
+      quizModalTopic: null,
 
       // Actions
       resetCourse: (newCourseData: CourseData, newTitle: string) => {
@@ -84,6 +91,8 @@ export const useCourseStore = create<CourseState>()(
           divedDeeperTopics: [],
           showConfetti: false,
           isInitialCourse: false,
+          showQuizModal: false,
+          quizModalTopic: null,
         });
       },
 
@@ -110,10 +119,15 @@ export const useCourseStore = create<CourseState>()(
           newBadges.length > 0 &&
           newBadges.length === Object.keys(state.courseData).length;
 
+        // Show quiz modal when topic is completed (100% progress)
+        const showQuizModal = newProgressPercentage === 100;
+
         set({
           progress: newProgress,
           badges: newBadges,
           showConfetti,
+          showQuizModal,
+          quizModalTopic: showQuizModal ? topic : null,
         });
       },
 
@@ -124,7 +138,11 @@ export const useCourseStore = create<CourseState>()(
         const newIndex = activeTopicIndex + direction;
 
         if (newIndex >= 0 && newIndex < topicKeys.length) {
-          set({ activeTopic: topicKeys[newIndex] });
+          set({
+            activeTopic: topicKeys[newIndex],
+            showQuizModal: false,
+            quizModalTopic: null,
+          });
         }
       },
 
@@ -135,7 +153,11 @@ export const useCourseStore = create<CourseState>()(
         const newIndex = activeTopicIndex + 1;
 
         if (newIndex < topicKeys.length) {
-          set({ activeTopic: topicKeys[newIndex] });
+          set({
+            activeTopic: topicKeys[newIndex],
+            showQuizModal: false,
+            quizModalTopic: null,
+          });
         }
       },
 
@@ -175,12 +197,22 @@ export const useCourseStore = create<CourseState>()(
         });
       },
 
-      setActiveTopic: (topic: string) => set({ activeTopic: topic }),
+      setActiveTopic: (topic: string) =>
+        set({
+          activeTopic: topic,
+          showQuizModal: false,
+          quizModalTopic: null,
+        }),
       setShowConfetti: (show: boolean) => set({ showConfetti: show }),
       setShowInitialCourseNote: (show: boolean) =>
         set({ showInitialCourseNote: show }),
       setIsGeneratingCourse: (generating: boolean) =>
         set({ isGeneratingCourse: generating }),
+      setShowQuizModal: (show: boolean, topic?: string) =>
+        set({
+          showQuizModal: show,
+          quizModalTopic: show ? topic || null : null,
+        }),
 
       // Computed getters
       getCurrentTopicData: () => {

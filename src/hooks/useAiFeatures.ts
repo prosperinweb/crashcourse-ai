@@ -9,10 +9,6 @@ interface UseGenerateQuizProps {
   addAiQuiz: (topic: string, quiz: Quiz) => void;
 }
 
-interface UseGenerateMnemonicProps {
-  topicData: TopicData;
-}
-
 interface UseDiveDeeperProps {
   topicData: TopicData;
   topic: string;
@@ -65,37 +61,6 @@ export const useGenerateQuiz = ({
   };
 
   return { generateQuiz, isLoading };
-};
-
-/**
- * Custom hook for generating AI mnemonics
- * Manages loading state, error handling, and mnemonic storage
- */
-export const useGenerateMnemonic = ({
-  topicData,
-}: UseGenerateMnemonicProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [mnemonic, setMnemonic] = useState("");
-
-  const generateMnemonic = async () => {
-    setIsLoading(true);
-    setMnemonic("");
-
-    try {
-      const prompt = `You are a creative learning assistant. Create a simple, memorable, and slightly humorous mnemonic to help remember the concept of '${topicData.title}'. The concept is about: ${topicData.chunks[0].content}`;
-
-      const result = await callGeminiAPI(prompt);
-      setMnemonic(result);
-      toast.success("Mnemonic generated! 🧠");
-    } catch (error) {
-      console.error("Failed to generate mnemonic:", error);
-      toast.error("Failed to generate mnemonic. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { generateMnemonic, isLoading, mnemonic };
 };
 
 /**

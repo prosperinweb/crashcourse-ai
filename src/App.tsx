@@ -7,6 +7,7 @@ import { TopicNavigator } from "./components/TopicNavigator";
 import { LearningModule } from "./components/LearningModule";
 import { Dashboard } from "./components/Dashboard";
 import { Footer } from "./components/Footer";
+import { QuizModal } from "./components/QuizModal";
 
 // Lazy load the Confetti component for better performance
 const Confetti = lazy(() => import("react-confetti"));
@@ -26,6 +27,8 @@ const App = () => {
     isInitialCourse,
     showInitialCourseNote,
     isGeneratingCourse,
+    showQuizModal,
+    quizModalTopic,
 
     // Actions
     resetCourse,
@@ -37,6 +40,7 @@ const App = () => {
     addAiQuiz,
     setShowInitialCourseNote,
     setIsGeneratingCourse,
+    setShowQuizModal,
 
     // Computed getters
     getCurrentTopicData,
@@ -49,6 +53,17 @@ const App = () => {
   const currentTopicData = getCurrentTopicData();
   const topicKeys = getTopicKeys();
   const activeTopicIndex = getActiveTopicIndex();
+
+  // Get quiz modal data
+  const quizModalTopicData = quizModalTopic ? courseData[quizModalTopic] : null;
+
+  // Check if the current topic's quiz has been completed
+  const isCurrentTopicQuizCompleted = completedQuizzes.includes(activeTopic);
+
+  // Handler for generating new course
+  const handleGenerateNewCourse = () => {
+    setIsGeneratingCourse(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
@@ -67,6 +82,23 @@ const App = () => {
           resetCourse={resetCourse}
         />
       )}
+
+      {/* Quiz Modal */}
+      {showQuizModal && quizModalTopic && quizModalTopicData && (
+        <QuizModal
+          isOpen={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          topicData={quizModalTopicData}
+          topic={quizModalTopic}
+          aiQuizzes={aiGeneratedQuizzes[quizModalTopic] || []}
+          addAiQuiz={addAiQuiz}
+          onQuizComplete={() => handleQuizComplete(quizModalTopic)}
+          onNextTopic={handleNextTopic}
+          isLastTopic={getIsLastTopic()}
+          onGenerateNewCourse={handleGenerateNewCourse}
+        />
+      )}
+
       <main className="container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           {isInitialCourse && showInitialCourseNote && (
@@ -105,15 +137,12 @@ const App = () => {
                 topicData={currentTopicData}
                 updateProgress={updateProgress}
                 progress={getCurrentTopicProgress()}
-                addAiQuiz={addAiQuiz}
-                aiQuizzes={aiGeneratedQuizzes[activeTopic] || []}
                 courseData={courseData}
-                onQuizComplete={() => handleQuizComplete(activeTopic)}
-                isTopicCompleted={completedQuizzes.includes(activeTopic)}
-                handleNextTopic={handleNextTopic}
-                isLastTopic={getIsLastTopic()}
                 updateTopicContent={updateTopicContent}
                 hasDivedDeeper={divedDeeperTopics.includes(activeTopic)}
+                isLastTopic={getIsLastTopic()}
+                isTopicQuizCompleted={isCurrentTopicQuizCompleted}
+                onGenerateNewCourse={handleGenerateNewCourse}
               />
             </>
           ) : (

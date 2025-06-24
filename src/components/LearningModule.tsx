@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { BookOpen, Loader, Sparkles } from "lucide-react";
-import type { TopicData, Quiz, CourseData } from "../types";
+import type { TopicData, CourseData } from "../types";
 import { CodeBlock } from "./CodeBlock";
 import { Mnemonic } from "./Mnemonic";
-import { AiFeatures } from "./AiFeatures";
-import { QuizSection } from "./QuizSection";
 import { useDiveDeeper } from "../hooks/useAiFeatures";
 
 interface LearningModuleProps {
@@ -12,15 +10,12 @@ interface LearningModuleProps {
   topicData: TopicData;
   updateProgress: (topic: string, chunkIndex: number) => void;
   progress: number;
-  addAiQuiz: (topic: string, quiz: Quiz) => void;
-  aiQuizzes: Quiz[];
   courseData: CourseData;
-  onQuizComplete: () => void;
-  isTopicCompleted: boolean;
-  handleNextTopic: () => void;
-  isLastTopic: boolean;
   updateTopicContent: (topic: string, newTopicData: TopicData) => void;
   hasDivedDeeper: boolean;
+  isLastTopic: boolean;
+  isTopicQuizCompleted: boolean;
+  onGenerateNewCourse: () => void;
 }
 
 export const LearningModule = ({
@@ -28,14 +23,11 @@ export const LearningModule = ({
   topicData,
   updateProgress,
   progress,
-  addAiQuiz,
-  aiQuizzes,
-  onQuizComplete,
-  isTopicCompleted,
-  handleNextTopic,
-  isLastTopic,
   updateTopicContent,
   hasDivedDeeper,
+  isLastTopic,
+  isTopicQuizCompleted,
+  onGenerateNewCourse,
 }: LearningModuleProps) => {
   const [activeChunk, setActiveChunk] = useState(0);
 
@@ -109,8 +101,6 @@ export const LearningModule = ({
             )}
           </button>
         </div>
-
-        <AiFeatures topicData={topicData} addAiQuiz={addAiQuiz} topic={topic} />
       </div>
 
       <div className="flex justify-between items-center mt-8">
@@ -130,23 +120,30 @@ export const LearningModule = ({
         </button>
       </div>
 
+      {/* Progress indicator */}
       {progress === 100 && (
-        <QuizSection
-          originalQuiz={topicData.quiz}
-          aiQuizzes={aiQuizzes}
-          onQuizComplete={onQuizComplete}
-        />
-      )}
-
-      {isTopicCompleted && (
-        <div className="mt-8 text-center">
-          <button
-            onClick={handleNextTopic}
-            disabled={isLastTopic}
-            className="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-transform transform hover:scale-105"
-          >
-            {isLastTopic ? "Course Completed!" : "Next Topic →"}
-          </button>
+        <div className="mt-8">
+          {isLastTopic && isTopicQuizCompleted ? (
+            // Course is completely finished
+            <div className="p-4 bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500 rounded-lg text-center">
+              <p className="text-green-300 font-semibold mb-3">
+                🎉 Congratulations! You've completed the entire course!
+              </p>
+              <button
+                onClick={onGenerateNewCourse}
+                className="px-6 py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition"
+              >
+                Generate New Course →
+              </button>
+            </div>
+          ) : (
+            // Topic completed, quiz will appear or is in progress
+            <div className="p-4 bg-green-900/20 border border-green-500 rounded-lg text-center">
+              <p className="text-green-300 font-semibold">
+                🎉 Topic completed! Quiz will appear shortly...
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

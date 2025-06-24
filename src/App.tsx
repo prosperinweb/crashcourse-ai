@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Confetti from "react-confetti";
+import { Info, X } from "lucide-react";
 import type {
   CourseData,
   Progress,
@@ -31,6 +33,15 @@ const App = () => {
   const [courseTitle, setCourseTitle] = useState("Advanced TypeScript");
   const [completedQuizzes, setCompletedQuizzes] = useState<string[]>([]);
   const [divedDeeperTopics, setDivedDeeperTopics] = useState<string[]>([]);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [isInitialCourse, setIsInitialCourse] = useState(true);
+  const [showInitialCourseNote, setShowInitialCourseNote] = useState(true);
+
+  useEffect(() => {
+    if (badges.length > 0 && badges.length === Object.keys(courseData).length) {
+      setShowConfetti(true);
+    }
+  }, [badges, courseData]);
 
   const resetCourse = (newCourseData: CourseData, newTitle: string) => {
     setCourseData(newCourseData);
@@ -46,6 +57,8 @@ const App = () => {
     setAiGeneratedQuizzes({});
     setCompletedQuizzes([]);
     setDivedDeeperTopics([]);
+    setShowConfetti(false);
+    setIsInitialCourse(false);
   };
 
   const currentTopicData = courseData[activeTopic];
@@ -106,6 +119,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+      {showConfetti && <Confetti recycle={false} />}
       <Header
         setIsGeneratingCourse={setIsGeneratingCourse}
         courseTitle={courseTitle}
@@ -118,6 +132,28 @@ const App = () => {
       )}
       <main className="container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
+          {isInitialCourse && showInitialCourseNote && (
+            <div
+              className="bg-blue-900/50 border border-blue-500 text-blue-200 px-4 py-3 rounded-lg relative mb-4 flex items-center"
+              role="alert"
+            >
+              <Info className="h-5 w-5 mr-3 text-blue-400 flex-shrink-0" />
+              <div>
+                <strong className="font-bold">Welcome! </strong>
+                <span className="block sm:inline">
+                  This is an example course. You can generate your own custom
+                  course using the "New Course" button above.
+                </span>
+              </div>
+              <button
+                className="absolute top-2 right-2 p-1"
+                onClick={() => setShowInitialCourseNote(false)}
+                aria-label="Dismiss"
+              >
+                <X className="h-5 w-5 text-blue-300 hover:text-white" />
+              </button>
+            </div>
+          )}
           {currentTopicData ? (
             <>
               <TopicNavigator

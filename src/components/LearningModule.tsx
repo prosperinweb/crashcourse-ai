@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Loader, Sparkles, BrainCircuit } from "lucide-react";
+import { BookOpen, Loader, Sparkles } from "lucide-react";
 import type { TopicData, Quiz, CourseData } from "../types";
 import { CodeBlock } from "./CodeBlock";
 import { Mnemonic } from "./Mnemonic";
 import { AiFeatures } from "./AiFeatures";
 import { QuizSection } from "./QuizSection";
-import { callGeminiAPI } from "../utils/geminiApi";
+import { useDiveDeeper } from "../hooks/useAiFeatures";
 
 interface LearningModuleProps {
   topic: string;
@@ -38,7 +38,13 @@ export const LearningModule = ({
   hasDivedDeeper,
 }: LearningModuleProps) => {
   const [activeChunk, setActiveChunk] = useState(0);
-  const [isDivingDeeper, setIsDivingDeeper] = useState(false);
+
+  // Use custom hook for dive deeper functionality
+  const { diveDeeper, isLoading: isDivingDeeper } = useDiveDeeper({
+    topicData,
+    topic,
+    updateTopicContent,
+  });
 
   useEffect(() => {
     setActiveChunk(0);
@@ -49,58 +55,6 @@ export const LearningModule = ({
       setActiveChunk(index);
       updateProgress(topic, index);
     }
-  };
-
-  const diveDeeper = async () => {
-    setIsDivingDeeper(true);
-    const prompt = `You are an expert educator. The user wants to "dive deeper" into the topic of "${
-      topicData.title
-    }". Their current learning module is: ${JSON.stringify(
-      topicData
-    )}. Please generate a new, more detailed and comprehensive version of this learning module. Expand on the existing content, add more examples, and introduce more advanced concepts related to the topic. The structure of your output must be a single JSON object that matches this schema: { "title": "string", "learningObjectives": ["string"], "chunks": [{ "title": "string", "content": "string", "code": "string", "mnemonic": "string" }], "quiz": { "question": "string", "type": "string", "options": ["string"], "answer": "string" } }. Make the content about 50-75% longer than the original.`;
-    const schema = {
-      type: "OBJECT",
-      properties: {
-        title: { type: "STRING" },
-        learningObjectives: {
-          type: "ARRAY",
-          items: { type: "STRING" },
-        },
-        chunks: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              title: { type: "STRING" },
-              content: { type: "STRING" },
-              code: { type: "STRING" },
-              mnemonic: { type: "STRING" },
-            },
-            required: ["title", "content"],
-          },
-        },
-        quiz: {
-          type: "OBJECT",
-          properties: {
-            question: { type: "STRING" },
-            type: { type: "STRING", enum: ["multiple-choice"] },
-            options: { type: "ARRAY", items: { type: "STRING" } },
-            answer: { type: "STRING" },
-          },
-          required: ["question", "type", "options", "answer"],
-        },
-      },
-      required: ["title", "learningObjectives", "chunks", "quiz"],
-    };
-
-    const result = await callGeminiAPI(prompt, schema);
-    try {
-      const parsedTopicData = JSON.parse(result);
-      updateTopicContent(topic, parsedTopicData);
-    } catch (e) {
-      console.error("Failed to parse regenerated topic data", e);
-    }
-    setIsDivingDeeper(false);
   };
 
   const currentChunk = topicData.chunks[activeChunk];

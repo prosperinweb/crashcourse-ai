@@ -1,14 +1,6 @@
-import { useState, useEffect } from "react";
-import Confetti from "react-confetti";
+import { Suspense, lazy } from "react";
 import { Info, X } from "lucide-react";
-import type {
-  CourseData,
-  Progress,
-  AiGeneratedQuizzes,
-  Quiz,
-  TopicData,
-} from "./types";
-import { initialCourseContent } from "./data/initialCourseContent";
+import { useCourseStore } from "./store/courseStore";
 import { Header } from "./components/Header";
 import { CourseGenerator } from "./components/CourseGenerator";
 import { TopicNavigator } from "./components/TopicNavigator";
@@ -16,110 +8,55 @@ import { LearningModule } from "./components/LearningModule";
 import { Dashboard } from "./components/Dashboard";
 import { Footer } from "./components/Footer";
 
+// Lazy load the Confetti component for better performance
+const Confetti = lazy(() => import("react-confetti"));
+
 const App = () => {
-  const [courseData, setCourseData] =
-    useState<CourseData>(initialCourseContent);
-  const [activeTopic, setActiveTopic] = useState(
-    Object.keys(initialCourseContent)[0]
-  );
-  const [progress, setProgress] = useState<Progress>(() => {
-    const topics = Object.keys(initialCourseContent);
-    return topics.reduce((acc, topic) => ({ ...acc, [topic]: 0 }), {});
-  });
-  const [badges, setBadges] = useState<string[]>([]);
-  const [aiGeneratedQuizzes, setAiGeneratedQuizzes] =
-    useState<AiGeneratedQuizzes>({});
-  const [isGeneratingCourse, setIsGeneratingCourse] = useState(false);
-  const [courseTitle, setCourseTitle] = useState("Advanced TypeScript");
-  const [completedQuizzes, setCompletedQuizzes] = useState<string[]>([]);
-  const [divedDeeperTopics, setDivedDeeperTopics] = useState<string[]>([]);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isInitialCourse, setIsInitialCourse] = useState(true);
-  const [showInitialCourseNote, setShowInitialCourseNote] = useState(true);
+  const {
+    // State
+    courseData,
+    activeTopic,
+    progress,
+    badges,
+    aiGeneratedQuizzes,
+    courseTitle,
+    completedQuizzes,
+    divedDeeperTopics,
+    showConfetti,
+    isInitialCourse,
+    showInitialCourseNote,
+    isGeneratingCourse,
 
-  useEffect(() => {
-    if (badges.length > 0 && badges.length === Object.keys(courseData).length) {
-      setShowConfetti(true);
-    }
-  }, [badges, courseData]);
+    // Actions
+    resetCourse,
+    updateProgress,
+    navigateTopic,
+    handleNextTopic,
+    handleQuizComplete,
+    updateTopicContent,
+    addAiQuiz,
+    setShowInitialCourseNote,
+    setIsGeneratingCourse,
 
-  const resetCourse = (newCourseData: CourseData, newTitle: string) => {
-    setCourseData(newCourseData);
-    setCourseTitle(newTitle);
-    const newTopics = Object.keys(newCourseData);
-    setActiveTopic(newTopics[0]);
-    const newProgress = newTopics.reduce(
-      (acc, topic) => ({ ...acc, [topic]: 0 }),
-      {}
-    );
-    setProgress(newProgress);
-    setBadges([]);
-    setAiGeneratedQuizzes({});
-    setCompletedQuizzes([]);
-    setDivedDeeperTopics([]);
-    setShowConfetti(false);
-    setIsInitialCourse(false);
-  };
+    // Computed getters
+    getCurrentTopicData,
+    getTopicKeys,
+    getActiveTopicIndex,
+    getCurrentTopicProgress,
+    getIsLastTopic,
+  } = useCourseStore();
 
-  const currentTopicData = courseData[activeTopic];
-  const topicKeys = Object.keys(courseData);
-  const activeTopicIndex = topicKeys.indexOf(activeTopic);
-
-  const updateProgress = (topic: string, chunkIndex: number) => {
-    if (!currentTopicData) return;
-    const newProgressPercentage =
-      ((chunkIndex + 1) / currentTopicData.chunks.length) * 100;
-    const newProgress = {
-      ...progress,
-      [topic]: Math.max(progress[topic] || 0, newProgressPercentage),
-    };
-    setProgress(newProgress);
-
-    if (newProgressPercentage === 100 && !badges.includes(topic)) {
-      setBadges([...badges, topic]);
-    }
-  };
-
-  const navigateTopic = (direction: number) => {
-    const newIndex = activeTopicIndex + direction;
-    if (newIndex >= 0 && newIndex < topicKeys.length) {
-      setActiveTopic(topicKeys[newIndex]);
-    }
-  };
-
-  const handleNextTopic = () => {
-    const newIndex = activeTopicIndex + 1;
-    if (newIndex < topicKeys.length) {
-      setActiveTopic(topicKeys[newIndex]);
-    }
-  };
-
-  const handleQuizComplete = (topic: string) => {
-    if (!completedQuizzes.includes(topic)) {
-      setCompletedQuizzes([...completedQuizzes, topic]);
-    }
-  };
-
-  const updateTopicContent = (topic: string, newTopicData: TopicData) => {
-    setCourseData((prev) => ({
-      ...prev,
-      [topic]: newTopicData,
-    }));
-    if (!divedDeeperTopics.includes(topic)) {
-      setDivedDeeperTopics([...divedDeeperTopics, topic]);
-    }
-  };
-
-  const addAiQuiz = (topic: string, quiz: Quiz) => {
-    setAiGeneratedQuizzes((prev) => ({
-      ...prev,
-      [topic]: [...(prev[topic] || []), quiz],
-    }));
-  };
+  const currentTopicData = getCurrentTopicData();
+  const topicKeys = getTopicKeys();
+  const activeTopicIndex = getActiveTopicIndex();
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
-      {showConfetti && <Confetti recycle={false} />}
+      {showConfetti && (
+        <Suspense fallback={null}>
+          <Confetti recycle={false} />
+        </Suspense>
+      )}
       <Header
         setIsGeneratingCourse={setIsGeneratingCourse}
         courseTitle={courseTitle}
@@ -167,14 +104,14 @@ const App = () => {
                 topic={activeTopic}
                 topicData={currentTopicData}
                 updateProgress={updateProgress}
-                progress={progress[activeTopic] || 0}
+                progress={getCurrentTopicProgress()}
                 addAiQuiz={addAiQuiz}
                 aiQuizzes={aiGeneratedQuizzes[activeTopic] || []}
                 courseData={courseData}
                 onQuizComplete={() => handleQuizComplete(activeTopic)}
                 isTopicCompleted={completedQuizzes.includes(activeTopic)}
                 handleNextTopic={handleNextTopic}
-                isLastTopic={activeTopicIndex === topicKeys.length - 1}
+                isLastTopic={getIsLastTopic()}
                 updateTopicContent={updateTopicContent}
                 hasDivedDeeper={divedDeeperTopics.includes(activeTopic)}
               />

@@ -1,5 +1,6 @@
 {
   "name": "crashcourse-ai",
+  "homepage": "https://prosperinweb.github.io/crashcourse-ai",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,12 +8,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
     "@tailwindcss/vite": "^4.1.8",
     "ai": "^4.3.16",
+    "gh-pages": "^6.3.0",
     "lucide-react": "^0.513.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

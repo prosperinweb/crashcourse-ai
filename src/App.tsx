@@ -1,5 +1,11 @@
 import { useState } from "react";
-import type { CourseData, Progress, AiGeneratedQuizzes, Quiz } from "./types";
+import type {
+  CourseData,
+  Progress,
+  AiGeneratedQuizzes,
+  Quiz,
+  TopicData,
+} from "./types";
 import { initialCourseContent } from "./data/initialCourseContent";
 import { Header } from "./components/Header";
 import { CourseGenerator } from "./components/CourseGenerator";
@@ -24,6 +30,7 @@ const App = () => {
   const [isGeneratingCourse, setIsGeneratingCourse] = useState(false);
   const [courseTitle, setCourseTitle] = useState("Advanced TypeScript");
   const [completedQuizzes, setCompletedQuizzes] = useState<string[]>([]);
+  const [divedDeeperTopics, setDivedDeeperTopics] = useState<string[]>([]);
 
   const resetCourse = (newCourseData: CourseData, newTitle: string) => {
     setCourseData(newCourseData);
@@ -38,6 +45,7 @@ const App = () => {
     setBadges([]);
     setAiGeneratedQuizzes({});
     setCompletedQuizzes([]);
+    setDivedDeeperTopics([]);
   };
 
   const currentTopicData = courseData[activeTopic];
@@ -76,6 +84,16 @@ const App = () => {
   const handleQuizComplete = (topic: string) => {
     if (!completedQuizzes.includes(topic)) {
       setCompletedQuizzes([...completedQuizzes, topic]);
+    }
+  };
+
+  const updateTopicContent = (topic: string, newTopicData: TopicData) => {
+    setCourseData((prev) => ({
+      ...prev,
+      [topic]: newTopicData,
+    }));
+    if (!divedDeeperTopics.includes(topic)) {
+      setDivedDeeperTopics([...divedDeeperTopics, topic]);
     }
   };
 
@@ -121,6 +139,8 @@ const App = () => {
                 isTopicCompleted={completedQuizzes.includes(activeTopic)}
                 handleNextTopic={handleNextTopic}
                 isLastTopic={activeTopicIndex === topicKeys.length - 1}
+                updateTopicContent={updateTopicContent}
+                hasDivedDeeper={divedDeeperTopics.includes(activeTopic)}
               />
             </>
           ) : (

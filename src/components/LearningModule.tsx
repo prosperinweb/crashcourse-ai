@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Loader, Sparkles, BrainCircuit } from "lucide-react";
 import type { TopicData, Quiz, CourseData } from "../types";
 import { CodeBlock } from "./CodeBlock";
 import { Mnemonic } from "./Mnemonic";
 import { AiFeatures } from "./AiFeatures";
 import { QuizSection } from "./QuizSection";
+import { callGeminiAPI } from "../utils/geminiApi";
 
 interface LearningModuleProps {
   topic: string;
@@ -18,6 +19,8 @@ interface LearningModuleProps {
   isTopicCompleted: boolean;
   handleNextTopic: () => void;
   isLastTopic: boolean;
+  updateTopicContent: (topic: string, newTopicData: TopicData) => void;
+  hasDivedDeeper: boolean;
 }
 
 export const LearningModule = ({
@@ -31,8 +34,11 @@ export const LearningModule = ({
   isTopicCompleted,
   handleNextTopic,
   isLastTopic,
+  updateTopicContent,
+  hasDivedDeeper,
 }: LearningModuleProps) => {
   const [activeChunk, setActiveChunk] = useState(0);
+  const [isDivingDeeper, setIsDivingDeeper] = useState(false);
 
   useEffect(() => {
     setActiveChunk(0);
@@ -43,6 +49,58 @@ export const LearningModule = ({
       setActiveChunk(index);
       updateProgress(topic, index);
     }
+  };
+
+  const diveDeeper = async () => {
+    setIsDivingDeeper(true);
+    const prompt = `You are an expert educator. The user wants to "dive deeper" into the topic of "${
+      topicData.title
+    }". Their current learning module is: ${JSON.stringify(
+      topicData
+    )}. Please generate a new, more detailed and comprehensive version of this learning module. Expand on the existing content, add more examples, and introduce more advanced concepts related to the topic. The structure of your output must be a single JSON object that matches this schema: { "title": "string", "learningObjectives": ["string"], "chunks": [{ "title": "string", "content": "string", "code": "string", "mnemonic": "string" }], "quiz": { "question": "string", "type": "string", "options": ["string"], "answer": "string" } }. Make the content about 50-75% longer than the original.`;
+    const schema = {
+      type: "OBJECT",
+      properties: {
+        title: { type: "STRING" },
+        learningObjectives: {
+          type: "ARRAY",
+          items: { type: "STRING" },
+        },
+        chunks: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" },
+              content: { type: "STRING" },
+              code: { type: "STRING" },
+              mnemonic: { type: "STRING" },
+            },
+            required: ["title", "content"],
+          },
+        },
+        quiz: {
+          type: "OBJECT",
+          properties: {
+            question: { type: "STRING" },
+            type: { type: "STRING", enum: ["multiple-choice"] },
+            options: { type: "ARRAY", items: { type: "STRING" } },
+            answer: { type: "STRING" },
+          },
+          required: ["question", "type", "options", "answer"],
+        },
+      },
+      required: ["title", "learningObjectives", "chunks", "quiz"],
+    };
+
+    const result = await callGeminiAPI(prompt, schema);
+    try {
+      const parsedTopicData = JSON.parse(result);
+      updateTopicContent(topic, parsedTopicData);
+    } catch (e) {
+      console.error("Failed to parse regenerated topic data", e);
+    }
+    setIsDivingDeeper(false);
   };
 
   const currentChunk = topicData.chunks[activeChunk];
@@ -78,6 +136,25 @@ export const LearningModule = ({
         {currentChunk.code && <CodeBlock code={currentChunk.code} />}
 
         {currentChunk.mnemonic && <Mnemonic mnemonic={currentChunk.mnemonic} />}
+
+        <div className="mt-6 border-t border-gray-700 pt-6">
+          <button
+            onClick={diveDeeper}
+            disabled={isDivingDeeper || hasDivedDeeper}
+            className="w-full px-4 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition flex items-center justify-center text-base"
+          >
+            {isDivingDeeper ? (
+              <Loader className="animate-spin mr-2" />
+            ) : hasDivedDeeper ? (
+              "Dived Deeper ✔️"
+            ) : (
+              <>
+                <Sparkles className="mr-2" />
+                Dive Deeper into {topicData.title}
+              </>
+            )}
+          </button>
+        </div>
 
         <AiFeatures topicData={topicData} addAiQuiz={addAiQuiz} topic={topic} />
       </div>

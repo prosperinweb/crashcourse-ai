@@ -114,18 +114,12 @@ export const useCourseStore = create<CourseState>()(
             ? [...state.badges, topic]
             : state.badges;
 
-        // Check if all topics are completed for confetti
-        const showConfetti =
-          newBadges.length > 0 &&
-          newBadges.length === Object.keys(state.courseData).length;
-
         // Show quiz modal when topic is completed (100% progress)
         const showQuizModal = newProgressPercentage === 100;
 
         set({
           progress: newProgress,
           badges: newBadges,
-          showConfetti,
           showQuizModal,
           quizModalTopic: showQuizModal ? topic : null,
         });
@@ -164,8 +158,16 @@ export const useCourseStore = create<CourseState>()(
       handleQuizComplete: (topic: string) => {
         const state = get();
         if (!state.completedQuizzes.includes(topic)) {
+          const newCompletedQuizzes = [...state.completedQuizzes, topic];
+
+          // Check if this is the course completion (all topics have completed quizzes)
+          const allTopics = Object.keys(state.courseData);
+          const courseCompleted =
+            newCompletedQuizzes.length === allTopics.length;
+
           set({
-            completedQuizzes: [...state.completedQuizzes, topic],
+            completedQuizzes: newCompletedQuizzes,
+            showConfetti: courseCompleted,
           });
         }
       },
